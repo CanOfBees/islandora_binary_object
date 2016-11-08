@@ -80,6 +80,10 @@ function islandora_binary_object_islandora_required_objects(IslandoraTuque $conn
   $datastream->mimetype = 'image/png';
   $datastream->setContentFromFile("$islandora_path/images/folder.png", FALSE);
   $binary_object_collection->ingestDatastream($datastream);
+  // Supplemental Datastream.
+  $datastream = $binary_object_collection->constructDatastream('SUPPL_0', 'M');
+  $datastream->label = 'SUPPL_0';
+  $datastream->mimetype = 'application/octet-stream';
   return array(
     'islandora_binary_object' => array(
       'title' => 'Islandora Binary Object',

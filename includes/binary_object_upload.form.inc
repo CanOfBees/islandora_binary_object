@@ -61,6 +61,26 @@ function islandora_binary_object_upload_form(array $form, array &$form_state) {
         'visible' => array('#edit-supply-thumbnail' => array('checked' => TRUE)),
       ),
     ),
+    'supply_supplemental' => array(
+      '#type' => 'checkbox',
+      '#title' => t('Supplemental Files'),
+    ),
+    'supplemental_section' => array(
+      'supplemental_file' => array(
+        '#title' => t('Supplemental File'),
+        '#type' => 'managed_file',
+        '#description' => t('Select a supplemental file to upload.<br/>Files must be less than <strong>@size MB</strong><br/>.', array('@size' => $upload_size)),
+        '#default_value' => isset($form_state['values']['supplemental_file']) ? $form_state['values']['supplemental_file'] : NULL,
+        '#upload_location' => 'temporary://',
+        '#upload_validators' => array(
+          'file_validate_size' => array($upload_size * 1024 * 1024),
+        ),
+        //'#type' => 'item',
+        '#states' => array(
+          'visible' => array('#edit-supply-supplemental' => array('checked' => TRUE)),
+        ),
+      ),
+    ),
   );
 }
 
@@ -75,9 +95,13 @@ function islandora_binary_object_upload_form(array $form, array &$form_state) {
 function islandora_binary_object_upload_form_validate(array $form, array &$form_state) {
   if ($form_state['values']['supply_thumbnail'] &&
     !$form_state['values']['thumbnail_file']) {
-    form_set_error('thumbnail_file', t('If you select "Upload Thumbnail" please supply a file.'));
-  }
+    form_set_error('thumbnail_file', t('If you select "Upload Thumbnail" please supply a file.'));}
+  if ($form_state['values']['supply_supplemental'] &&
+    !$form_state['values']['supplemental_file']) {
+    form_set_error('supplemental_file', t('If you select "Supplemental File" please supply a file.'));}
 }
+
+
 
 /**
  * Adds the uploaded file into the ingestable objects 'OBJ' datastream.
@@ -131,6 +155,25 @@ function islandora_binary_object_upload_form_submit(array $form, array &$form_st
     }
     if ($tn->mimetype != $thumbnail_file->filemime) {
       $tn->mimetype = $thumbnail_file->filemime;
+    }
+  }
+
+  if ($form_state['values']['supply_supplemental']) {
+    $supplemental_file = file_load($form_state['values']['supplemental_file']);
+
+    if (empty($object['SUPPL_0'])) {
+      $suppl = $object->constructDatastream('SUPPL_0', 'M');
+      $object->ingestDatastream($suppl);
+    }
+    else {
+      $suppl = $object['SUPPL_0'];
+    }
+    $suppl->setContentFromFile($supplemental_file->uri, FALSE);
+    if ($suppl->label != $supplemental_file->filename) {
+      $suppl->label = $supplemental_file->filename;
+    }
+    if ($suppl->mimetype != $supplemental_file->filemime) {
+      $suppl->mimetype = $supplemental_file->filemime;
     }
   }
 }
